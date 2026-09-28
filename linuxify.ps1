@@ -240,14 +240,8 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) { Invoke-Expression (& { (
     }
 }
 
-# ---------------------------------------------------------------- 12. WSL
-Write-Host "`n== 12. WSL (real Linux inside Windows) ==" -ForegroundColor Cyan
-if (Ask 'Install WSL with Ubuntu? (large download, needs a reboot; say n if you dual-boot Linux)') {
-    wsl.exe --install -d Ubuntu
-}
-
-# ---------------------------------------------------------------- 13. terminal look
-Write-Host "`n== 13. Translucent terminal (ghost_terminal look) ==" -ForegroundColor Cyan
+# ---------------------------------------------------------------- 12. terminal look
+Write-Host "`n== 12. Translucent terminal (ghost_terminal look) ==" -ForegroundColor Cyan
 if (Ask 'Windows Terminal: black background at 58% opacity, green #96D5A2 text, Linux console colors, 96x42?') {
     # Same values as olympus-terminal/ghost_terminal's GNOME profile. The old file is kept as
     # settings.json.linuxify-bak; undo-linuxify restores it.
@@ -291,8 +285,8 @@ if (Ask 'Windows Terminal: black background at 58% opacity, green #96D5A2 text, 
     }
 }
 
-# ---------------------------------------------------------------- 14. workspace hotkeys
-Write-Host "`n== 14. GNOME workspace hotkeys (AutoHotkey) ==" -ForegroundColor Cyan
+# ---------------------------------------------------------------- 13. workspace hotkeys
+Write-Host "`n== 13. GNOME workspace hotkeys (AutoHotkey) ==" -ForegroundColor Cyan
 Write-Host '  10 fixed desktops; Ctrl+1..0 switch, Ctrl+Shift+Left/Right prev/next, Ctrl+Shift+Alt+Left/Right'
 Write-Host '  move window, Win+T tile cycle, Ctrl+Space terminal, Ctrl+Shift+3/4/5 screenshots'
 if (Ask 'Install AutoHotkey v2 + VirtualDesktopAccessor and start the hotkeys at login?') {
@@ -338,8 +332,8 @@ if (Ask 'Install AutoHotkey v2 + VirtualDesktopAccessor and start the hotkeys at
     }
 }
 
-# ---------------------------------------------------------------- 15. workspace wallpapers
-Write-Host "`n== 15. One wallpaper per workspace ==" -ForegroundColor Cyan
+# ---------------------------------------------------------------- 14. workspace wallpapers
+Write-Host "`n== 14. One wallpaper per workspace ==" -ForegroundColor Cyan
 if (Ask 'Download the dark sci-fi set (~120 MB) and give each desktop its own wallpaper?') {
     try {
         # The hotkeys script creates the 10 desktops; give it a moment if it was just started
@@ -357,4 +351,4 @@ Write-Host "Log: $Log"
 if (Ask 'Restart Explorer now to apply desktop changes?') {
     Stop-Process -Name explorer -Force
 }
-Write-Host 'Some changes (policies, Fast Startup, WSL) need a full restart.'
+Write-Host 'Some changes (policies, Fast Startup) need a full restart.'

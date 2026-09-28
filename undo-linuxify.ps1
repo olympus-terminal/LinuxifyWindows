@@ -1,6 +1,6 @@
 # undo-linuxify.ps1
 # Reverts the registry changes made by linuxify.ps1 and keep-local-account.ps1 back to Windows defaults.
-# Does NOT reinstall removed apps (use the Microsoft Store), uninstall winget tools, remove WSL,
+# Does NOT reinstall removed apps (use the Microsoft Store), uninstall winget tools,
 # or delete the BackupAdmin account (net user BackupAdmin /delete).
 #   powershell -ExecutionPolicy Bypass -File .\undo-linuxify.ps1
 # Alternative: System Restore -> "Before linuxify" restore point.
