@@ -6,7 +6,7 @@ bash-style shell, CLI tools, cleaner Explorer and taskbar defaults, and fixes fo
 
 Plain PowerShell, no dependencies, every section opt-in, everything logged and reversible.
 
-**Tested on:** Windows 11 Home 24H2. All sections applied with no `SKIP` lines in the log.
+**Tested on:** Windows 11 Home 24H2. Ran cleanly with no `SKIP` lines in the log.
 Reports from other editions and builds are welcome (please include your `linuxify.log`).
 
 ## Why
