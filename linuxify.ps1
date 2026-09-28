@@ -242,7 +242,7 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) { Invoke-Expression (& { (
 
 # ---------------------------------------------------------------- 12. WSL
 Write-Host "`n== 12. WSL (real Linux inside Windows) ==" -ForegroundColor Cyan
-if (Ask 'Install WSL with Ubuntu? (large download, needs a reboot)') {
+if (Ask 'Install WSL with Ubuntu? (large download, needs a reboot; say n if you dual-boot Linux)') {
     wsl.exe --install -d Ubuntu
 }
 

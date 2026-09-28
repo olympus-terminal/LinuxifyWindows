@@ -63,7 +63,7 @@ powershell -ExecutionPolicy Bypass -File .\linuxify.ps1
 | 9 | Developer | Long paths, Developer Mode (symlinks without admin), built-in `sudo` (24H2+), `RemoteSigned` execution policy for the current user. |
 | 10 | Tools (winget) | PowerShell 7, Git + Git Bash, uutils coreutils, neovim, ripgrep, fd, fzf, bat, zoxide, 7-Zip, PowerToys (FancyZones tiling, a rofi-like launcher). |
 | 11 | Shell profile | Emacs/bash keys (Ctrl+A/E/R/W), Tab menu-complete, history prediction, `which`, `touch`, `ll`, `grep`→rg, `vim`→nvim, zoxide `z`. Written between `# >>> linuxify >>>` markers, so re-runs replace it cleanly. |
-| 12 | WSL | `wsl --install -d Ubuntu`. Needs a reboot. |
+| 12 | WSL | `wsl --install -d Ubuntu`. Needs a reboot. Skip it if you dual-boot: you already have real Linux, and section 8 covers the dual-boot fixes. |
 | 13 | Terminal look | Windows Terminal like [ghost_terminal](https://github.com/olympus-terminal/ghost_terminal): black at 58% opacity (no blur), green `#96D5A2` text, Linux console palette, 96×42, 13pt, Ctrl+PgUp/PgDn switch tabs. Old settings kept as `settings.json.linuxify-bak`. |
 | 14 | Workspace hotkeys | AutoHotkey v2 + [VirtualDesktopAccessor](https://github.com/Ciantic/VirtualDesktopAccessor), started at login. See the table below. |
 | 15 | Workspace wallpapers | Downloads the 11 dark sci-fi wallpapers from [linux_desktop_customization](https://github.com/olympus-terminal/linux_desktop_customization), scales them to the screen, and sets one per desktop (alphabetical order). Native per-desktop wallpapers, so no daemon. Uses the `VirtualDesktop` PowerShell Gallery module. |
