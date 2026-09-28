@@ -89,4 +89,18 @@ foreach ($p in @("$Docs\WindowsPowerShell\profile.ps1", "$Docs\PowerShell\profil
     }
 }
 
+# Workspace hotkeys (AutoHotkey itself stays installed: winget uninstall AutoHotkey.AutoHotkey)
+Get-CimInstance Win32_Process -Filter "Name like 'AutoHotkey%'" |
+    Where-Object CommandLine -match 'linux-hotkeys\.ahk' | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+$Lnk = Join-Path ([Environment]::GetFolderPath('Startup')) 'linux-hotkeys.lnk'
+if (Test-Path $Lnk) { Remove-Item $Lnk -Force; Write-Host '  workspace hotkeys stopped and removed from startup' }
+
+# Windows Terminal settings from before linuxify
+$WtFile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+if (Test-Path "$WtFile.linuxify-bak") {
+    Move-Item "$WtFile.linuxify-bak" $WtFile -Force
+    Write-Host '  Windows Terminal settings restored'
+}
+
 Write-Host "`nDone. Restart Windows to apply everything."
+Write-Host 'Workspace wallpapers are left as they are; change them in Settings > Personalization > Background.'

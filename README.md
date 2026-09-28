@@ -2,11 +2,13 @@
 
 Scripts for Linux users who have to live with a Windows 11 machine. They keep your **local account**,
 stop Microsoft's account sign-up pushing and ads, and make Windows work more like Linux: a
-bash-style shell, CLI tools, cleaner Explorer and taskbar defaults, and fixes for dual-booting with GRUB.
+bash-style shell, CLI tools, cleaner Explorer and taskbar defaults, fixes for dual-booting with GRUB, and a
+GNOME-style desktop: translucent terminal, 10 workspaces with GNOME hotkeys, and a wallpaper per workspace.
 
-Plain PowerShell, no dependencies, every section opt-in, everything logged and reversible.
+Plain PowerShell, every section opt-in, everything logged and reversible. The core sections have no
+dependencies; the optional desktop sections (14, 15) download AutoHotkey, a small DLL and wallpapers.
 
-**Tested on:** Windows 11 Home 24H2. Ran cleanly with no `SKIP` lines in the log.
+**Tested on:** Windows 11 Home 24H2 and 25H2 (build 26200). Ran cleanly with no `SKIP` lines in the log.
 Reports from other editions and builds are welcome (please include your `linuxify.log`).
 
 ## Why
@@ -40,7 +42,9 @@ powershell -ExecutionPolicy Bypass -File .\linuxify.ps1
 | File | What it does |
 |---|---|
 | `1-keep-local-account.cmd` → `keep-local-account.ps1` | Creates a `BackupAdmin` local admin (password prompted, never stored), blocks Microsoft accounts, turns off the setup nag screens, then verifies. |
-| `2-linuxify.cmd` → `linuxify.ps1` | Interactive customizer: 13 sections, each asks Y/n first. Logs to `%USERPROFILE%\linuxify.log`. |
+| `2-linuxify.cmd` → `linuxify.ps1` | Interactive customizer: 16 sections, each asks Y/n first. Logs to `%USERPROFILE%\linuxify.log`. |
+| `hotkeys/linux-hotkeys.ahk` | AutoHotkey v2 script with the GNOME workspace keys (installed by section 14). |
+| `set-workspace-wallpapers.ps1` | Gives each virtual desktop its own wallpaper. Runs on its own too (no admin), with `-ImageDir` for your own pictures. |
 | `undo-linuxify.cmd` → `undo-linuxify.ps1` | Resets the registry changes from both scripts to Windows defaults and removes the shell-profile block. |
 
 ## What `linuxify.ps1` does
@@ -60,9 +64,38 @@ powershell -ExecutionPolicy Bypass -File .\linuxify.ps1
 | 10 | Tools (winget) | PowerShell 7, Git + Git Bash, uutils coreutils, neovim, ripgrep, fd, fzf, bat, zoxide, 7-Zip, PowerToys (FancyZones tiling, a rofi-like launcher). |
 | 11 | Shell profile | Emacs/bash keys (Ctrl+A/E/R/W), Tab menu-complete, history prediction, `which`, `touch`, `ll`, `grep`→rg, `vim`→nvim, zoxide `z`. Written between `# >>> linuxify >>>` markers, so re-runs replace it cleanly. |
 | 12 | WSL | `wsl --install -d Ubuntu`. Needs a reboot. |
+| 13 | Terminal look | Windows Terminal like [ghost_terminal](https://github.com/olympus-terminal/ghost_terminal): black at 58% opacity (no blur), green `#96D5A2` text, Linux console palette, 96×42, 13pt, Ctrl+PgUp/PgDn switch tabs. Old settings kept as `settings.json.linuxify-bak`. |
+| 14 | Workspace hotkeys | AutoHotkey v2 + [VirtualDesktopAccessor](https://github.com/Ciantic/VirtualDesktopAccessor), started at login. See the table below. |
+| 15 | Workspace wallpapers | Downloads the 11 dark sci-fi wallpapers from [linux_desktop_customization](https://github.com/olympus-terminal/linux_desktop_customization), scales them to the screen, and sets one per desktop (alphabetical order). Native per-desktop wallpapers, so no daemon. Uses the `VirtualDesktop` PowerShell Gallery module. |
 
 **Never touched:** Windows Defender, Windows Update, firewall.
 
+## Workspace hotkeys (section 14)
+
+From `gnome-keybindings.dconf` in linux_desktop_customization. Ten fixed desktops, like GNOME with dynamic workspaces off.
+
+| Keys | Action |
+|---|---|
+| Ctrl+1 … Ctrl+9, Ctrl+0 | Go to workspace 1–10 |
+| Ctrl+Shift+← / → | Previous / next workspace |
+| Ctrl+Shift+Alt+← / →, Win+Shift+Alt+← / →, Win+Shift+PgUp / PgDn | Move the active window to the previous / next workspace and follow it |
+| Win+T | Tile cycle, like `gnome-window-tiler`: full → left half → right half → four quarters |
+| Ctrl+Space | New terminal window |
+| Ctrl+Shift+3 / 4 / 5 | Full screenshot / area screenshot / screen recording (Mac layout, Ctrl for Cmd) |
+| Ctrl+Alt+4 / 5 | Area screenshot / active window to the clipboard |
+
+Ctrl+1…0 override the same keys inside apps (for example browser tab switching), just as on GNOME.
+Edit `%USERPROFILE%\linux-hotkeys\linux-hotkeys.ahk` to change them, then double-click it to reload.
+
+## Workspace wallpapers without the rest
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\set-workspace-wallpapers.ps1                          # default set
+powershell -ExecutionPolicy Bypass -File .\set-workspace-wallpapers.ps1 -ImageDir ~\Pictures\mine  # your own
+```
+
+Images go to desktops in alphabetical order; name them `01-…`, `02-…` to control it. The panoramic default set is
+centre-cropped on 16:9 screens. To change a single desktop later, switch to it and use right-click → Personalize.
 ## Manual commands (no script)
 
 Type each command as a single line in an admin PowerShell. If the prompt turns into `>>`, a quote was
@@ -102,7 +135,7 @@ GRUB can't send Windows into Safe Mode, and F8 doesn't work on Windows 10/11.
 
 ## Undo
 
-- Run `undo-linuxify.cmd`, or use System Restore → "Before linuxify".
+- Run `undo-linuxify.cmd`, or use System Restore → "Before linuxify". Undo also stops the hotkeys and restores your old Windows Terminal settings; wallpapers stay until you change them.
 - Removed apps come back from the Microsoft Store. winget tools uninstall with `winget uninstall <id>`.
 - Delete the backup account with `net user BackupAdmin /delete`.
 

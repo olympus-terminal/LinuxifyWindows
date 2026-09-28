@@ -1,7 +1,7 @@
 # linuxify.ps1
 # Make Windows 11 quieter and more Linux-like: block Microsoft account recruiting, ads, "suggestions",
 # telemetry extras, Bing/Copilot/Recall/Widgets; Explorer + taskbar tweaks; dual-boot fixes;
-# Linux-style shell and CLI tools.
+# Linux-style shell and CLI tools; GNOME-style translucent terminal, workspace hotkeys and wallpapers.
 #
 # Run from an ADMIN PowerShell, signed in to the account you want customized:
 #   powershell -ExecutionPolicy Bypass -File .\linuxify.ps1
@@ -244,6 +244,111 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) { Invoke-Expression (& { (
 Write-Host "`n== 12. WSL (real Linux inside Windows) ==" -ForegroundColor Cyan
 if (Ask 'Install WSL with Ubuntu? (large download, needs a reboot)') {
     wsl.exe --install -d Ubuntu
+}
+
+# ---------------------------------------------------------------- 13. terminal look
+Write-Host "`n== 13. Translucent terminal (ghost_terminal look) ==" -ForegroundColor Cyan
+if (Ask 'Windows Terminal: black background at 58% opacity, green #96D5A2 text, Linux console colors, 96x42?') {
+    # Same values as olympus-terminal/ghost_terminal's GNOME profile. The old file is kept as
+    # settings.json.linuxify-bak; undo-linuxify restores it.
+    $WtDir = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+    $WtFile = Join-Path $WtDir 'settings.json'
+    try {
+        if (-not (Test-Path $WtDir)) { throw 'Windows Terminal not found (install it from the Store)' }
+        if (Test-Path $WtFile) {
+            if (-not (Test-Path "$WtFile.linuxify-bak")) { Copy-Item $WtFile "$WtFile.linuxify-bak" }
+            $wt = Get-Content $WtFile -Raw | ConvertFrom-Json
+        } else {
+            $wt = [pscustomobject]@{ profiles = [pscustomobject]@{ defaults = [pscustomobject]@{}; list = @() } }
+        }
+        $scheme = [pscustomobject][ordered]@{
+            name = 'Ghost Terminal'; background = '#000000'; foreground = '#96D5A2'; cursorColor = '#96D5A2'
+            selectionBackground = '#555555'
+            black = '#000000'; red = '#AA0000'; green = '#00AA00'; yellow = '#AA5500'
+            blue = '#0000AA'; purple = '#AA00AA'; cyan = '#00AAAA'; white = '#AAAAAA'
+            brightBlack = '#555555'; brightRed = '#FF5555'; brightGreen = '#55FF55'; brightYellow = '#FFFF55'
+            brightBlue = '#5555FF'; brightPurple = '#FF55FF'; brightCyan = '#55FFFF'; brightWhite = '#FFFFFF'
+        }
+        $schemes = @($wt.schemes | Where-Object { $_ -and $_.name -ne 'Ghost Terminal' }) + $scheme
+        $wt | Add-Member -Force NoteProperty schemes $schemes
+        $wt | Add-Member -Force NoteProperty initialCols 96
+        $wt | Add-Member -Force NoteProperty initialRows 42
+        if (-not $wt.profiles.defaults) { $wt.profiles | Add-Member -Force NoteProperty defaults ([pscustomobject]@{}) }
+        $d = $wt.profiles.defaults
+        $d | Add-Member -Force NoteProperty colorScheme 'Ghost Terminal'
+        $d | Add-Member -Force NoteProperty opacity 58
+        $d | Add-Member -Force NoteProperty useAcrylic $false   # GNOME-style: see-through, no blur
+        $d | Add-Member -Force NoteProperty font ([pscustomobject]@{ size = 13 })
+        # Ctrl+PgUp / Ctrl+PgDn switch tabs, as in GNOME Terminal
+        $keys = @($wt.keybindings | Where-Object { $_ -and $_.keys -notin 'ctrl+pgup', 'ctrl+pgdn' }) +
+                [pscustomobject]@{ id = 'Terminal.PrevTab'; keys = 'ctrl+pgup' } +
+                [pscustomobject]@{ id = 'Terminal.NextTab'; keys = 'ctrl+pgdn' }
+        $wt | Add-Member -Force NoteProperty keybindings $keys
+        $wt | ConvertTo-Json -Depth 20 | Set-Content $WtFile -Encoding UTF8
+        "  ok    Windows Terminal settings: $WtFile" | Tee-Object -FilePath $Log -Append | Write-Host
+    } catch {
+        "  SKIP  Windows Terminal ($($_.Exception.Message))" | Tee-Object -FilePath $Log -Append | Write-Host -ForegroundColor Yellow
+    }
+}
+
+# ---------------------------------------------------------------- 14. workspace hotkeys
+Write-Host "`n== 14. GNOME workspace hotkeys (AutoHotkey) ==" -ForegroundColor Cyan
+Write-Host '  10 fixed desktops; Ctrl+1..0 switch, Ctrl+Shift+Left/Right prev/next, Ctrl+Shift+Alt+Left/Right'
+Write-Host '  move window, Win+T tile cycle, Ctrl+Space terminal, Ctrl+Shift+3/4/5 screenshots'
+if (Ask 'Install AutoHotkey v2 + VirtualDesktopAccessor and start the hotkeys at login?') {
+    $HkDir = Join-Path $HOME 'linux-hotkeys'
+    $HkSrc = Join-Path $PSScriptRoot 'hotkeys\linux-hotkeys.ahk'
+    try {
+        if (-not (Test-Path $HkSrc)) { throw "$HkSrc missing (run from the repo folder)" }
+        New-Item -ItemType Directory -Force $HkDir | Out-Null
+        Copy-Item $HkSrc $HkDir -Force
+
+        $ahk = @("$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey64.exe",
+                 "$env:ProgramFiles\AutoHotkey\v2\AutoHotkey64.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+        if (-not $ahk) {
+            if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { throw 'winget not found; install AutoHotkey v2 manually' }
+            Write-Host '  installing AutoHotkey v2 ...'
+            winget install --id AutoHotkey.AutoHotkey --exact --silent --accept-source-agreements --accept-package-agreements | Out-Null
+            $ahk = @("$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey64.exe",
+                     "$env:ProgramFiles\AutoHotkey\v2\AutoHotkey64.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if (-not $ahk) { throw 'AutoHotkey64.exe not found after install' }
+        }
+
+        # Ciantic/VirtualDesktopAccessor (MIT): Windows 11 24H2+ build of the desktop-switching DLL
+        $Dll = Join-Path $HkDir 'VirtualDesktopAccessor.dll'
+        if (-not (Test-Path $Dll)) {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest 'https://github.com/Ciantic/VirtualDesktopAccessor/releases/download/2024-12-16-windows11/VirtualDesktopAccessor.dll' -OutFile $Dll -UseBasicParsing
+        }
+
+        $Lnk = Join-Path ([Environment]::GetFolderPath('Startup')) 'linux-hotkeys.lnk'
+        $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($Lnk)
+        $sc.TargetPath = $ahk
+        $sc.Arguments = "`"$HkDir\linux-hotkeys.ahk`""
+        $sc.WorkingDirectory = $HkDir
+        $sc.Save()
+
+        # Start it now through Explorer so it runs un-elevated, as it will at login
+        Get-CimInstance Win32_Process -Filter "Name like 'AutoHotkey%'" |
+            Where-Object CommandLine -match 'linux-hotkeys\.ahk' | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+        Start-Process explorer.exe "`"$Lnk`""
+        "  ok    hotkeys: $HkDir (starts at login via $Lnk)" | Tee-Object -FilePath $Log -Append | Write-Host
+    } catch {
+        "  SKIP  hotkeys ($($_.Exception.Message))" | Tee-Object -FilePath $Log -Append | Write-Host -ForegroundColor Yellow
+    }
+}
+
+# ---------------------------------------------------------------- 15. workspace wallpapers
+Write-Host "`n== 15. One wallpaper per workspace ==" -ForegroundColor Cyan
+if (Ask 'Download the dark sci-fi set (~120 MB) and give each desktop its own wallpaper?') {
+    try {
+        # The hotkeys script creates the 10 desktops; give it a moment if it was just started
+        Start-Sleep -Seconds 3
+        & (Join-Path $PSScriptRoot 'set-workspace-wallpapers.ps1')
+        "  ok    workspace wallpapers" | Tee-Object -FilePath $Log -Append | Write-Host
+    } catch {
+        "  SKIP  wallpapers ($($_.Exception.Message))" | Tee-Object -FilePath $Log -Append | Write-Host -ForegroundColor Yellow
+    }
 }
 
 # ---------------------------------------------------------------- done
