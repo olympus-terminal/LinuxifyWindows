@@ -45,6 +45,8 @@ powershell -ExecutionPolicy Bypass -File .\linuxify.ps1
 | `2-linuxify.cmd` → `linuxify.ps1` | Interactive customizer: 15 sections, each asks Y/n first. Logs to `%USERPROFILE%\linuxify.log`. |
 | `hotkeys/linux-hotkeys.ahk` | AutoHotkey v2 script with the GNOME workspace keys (installed by section 13). |
 | `set-workspace-wallpapers.ps1` | Gives each virtual desktop its own wallpaper. Runs on its own too (no admin), with `-ImageDir` for your own pictures. |
+| `3-game-tune.cmd` → `gaming/game-tune.ps1` | Gaming check and tune-up, see [Gaming](#gaming). `-CheckOnly` reports without changing anything. |
+| `gaming/play-game.ps1` | Launches a Steam game with background apps and AutoHotkey closed, then restores them when the game exits. |
 | `undo-linuxify.cmd` → `undo-linuxify.ps1` | Resets the registry changes from both scripts to Windows defaults and removes the shell-profile block. |
 
 ## What `linuxify.ps1` does
@@ -95,6 +97,60 @@ powershell -ExecutionPolicy Bypass -File .\set-workspace-wallpapers.ps1 -ImageDi
 
 Images go to desktops in alphabetical order; name them `01-…`, `02-…` to control it. The panoramic default set is
 centre-cropped on 16:9 screens. To change a single desktop later, switch to it and use right-click → Personalize.
+
+## Gaming
+
+For competitive FPS games on a gaming laptop. Tested on an HP OMEN 16 (i7-13620H, RTX 4050 6 GB) with a
+Samsung Odyssey G9 (5120×1440, 240 Hz) playing Battlefield 6.
+
+### 1. Check the display path first
+
+Double-click `3-game-tune.cmd`, or run `gaming\game-tune.ps1 -CheckOnly`. It reports:
+
+- **Which GPU drives each monitor.** On Optimus laptops (no MUX set), a monitor on an iGPU-wired port
+  runs through the Intel/AMD iGPU. Every frame is copied from the NVIDIA GPU (costing FPS and adding
+  latency), and **G-Sync is impossible**: NVIDIA Control Panel won't even show the G-SYNC page.
+  `nvidia-smi --query-gpu=display_attached --format=csv` should say `Yes`.
+  - Try each USB-C/DP port: usually only one is wired to the dGPU.
+  - Otherwise switch to discrete / dGPU-only mode (OMEN Gaming Hub → Graphics Switcher, MSI Center → GPU
+    Switch, or the BIOS), then reboot.
+  - HDMI is wired to the dGPU on many laptops, but check the monitor's HDMI version: the G9's HDMI 2.0
+    input can't do 5120×1440 at 240 Hz.
+- **What the monitor advertises (EDID).** If the maximum is below the panel's rated refresh, Windows can't
+  offer the higher mode, and the fix is in the **monitor's OSD, not the PC**. Odyssey G9: *System →
+  DisplayPort Ver → 1.4*, then *Game → Refresh Rate → 240 Hz*. With DP 1.2 it advertises 120 Hz max.
+- **Power mode** (should be *Best performance* on AC) and the top CPU users.
+
+### 2. Tune (each step asks Y/n)
+
+Game DVR and background recording off; *Optimizations for windowed games* and Windows *variable refresh
+rate* on; `-GameExe <path>` pins a game to the high-performance GPU; SysMain off; HP analytics services
+off (OMEN's own service is kept); resident browser updaters removed from login (scheduled updates still run).
+
+### 3. Launch through `play-game.ps1`
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\gaming\play-game.ps1 -SteamAppId 2807960 -Process bf6
+```
+
+Closes AutoHotkey (EA Javelin anti-cheat kicks Battlefield 6 while it runs), PowerToys, Command Palette,
+OneDrive and Widgets, then restores them when the game quits. Close your browser yourself.
+
+### Reading the Battlefield 6 performance overlay
+
+*Minimal* shows no FPS number; it breaks the frame down instead. Each value is `fps / ms per frame`:
+
+| Stat | Meaning |
+|---|---|
+| CPU | FPS the CPU could deliver. |
+| GPU | FPS the GPU could deliver. At 5120×1440 on a 6 GB laptop GPU this is the bottleneck. |
+| SIM | Simulation / server tick (30 in menus and Portal, 60 in matches). Not render speed. |
+| MP/s | Megapixels per second. Throughput, not a bottleneck; red is fine. |
+
+Your real FPS ≈ the lowest of CPU and GPU. If both sit at ~60 with low ms, something is capping you:
+check VSync and the refresh-rate setting (both were stuck at *On* / *60 Hz* here). "Memory exceeded" in the
+graphics menu means VRAM is full: use DLSS Performance before lowering textures.
+
 ## Manual commands (no script)
 
 Type each command as a single line in an admin PowerShell. If the prompt turns into `>>`, a quote was
