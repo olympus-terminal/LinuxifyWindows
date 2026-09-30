@@ -48,6 +48,7 @@ powershell -ExecutionPolicy Bypass -File .\linuxify.ps1
 | `set-workspace-wallpapers.ps1` | Gives each virtual desktop its own wallpaper. Runs on its own too (no admin), with `-ImageDir` for your own pictures. |
 | `3-game-tune.cmd` → `gaming/game-tune.ps1` | Gaming check and tune-up, see [Gaming](#gaming). `-CheckOnly` reports without changing anything. |
 | `gaming/play-game.ps1` | Launches a Steam game with background apps and AutoHotkey closed, then restores them when the game exits. |
+| `gaming/bf6-settings.ps1` | Exports, diffs and re-imports Battlefield 6 settings, whole or by section (graphics, input, keybinds, audio). |
 | `undo-linuxify.cmd` → `undo-linuxify.ps1` | Resets the registry changes from both scripts to Windows defaults and removes the shell-profile block. |
 
 ## What `linuxify.ps1` does
@@ -136,6 +137,31 @@ powershell -ExecutionPolicy Bypass -File .\gaming\play-game.ps1 -SteamAppId 2807
 
 Closes AutoHotkey (EA Javelin anti-cheat kicks Battlefield 6 while it runs), PowerToys, Command Palette,
 OneDrive and Widgets, then restores them when the game quits. Close your browser yourself.
+
+### Export and re-import Battlefield 6 settings
+
+`gaming/bf6-settings.ps1` snapshots all BF6 settings (graphics, mouse/controller, keybinds, audio) and
+merges them back in, on the same PC or another one. Quit the game first: it rewrites the file on exit.
+
+```powershell
+.\gaming\bf6-settings.ps1 export                                    # -> ~\bf6-settings\<PC>-<date>.zip
+.\gaming\bf6-settings.ps1 diff   -From ~\bf6-settings\TITAN-20261001-2000.zip
+.\gaming\bf6-settings.ps1 import -From ~\bf6-settings\TITAN-20261001-2000.zip -Only Input,KeyBinding,Audio
+.\gaming\bf6-settings.ps1 import -From <zip> -Full                  # same PC: restore every file as-is
+```
+
+- **Moving to a different PC:** use `-Only Input,KeyBinding,Audio` to bring your sensitivity, binds and
+  audio but keep that PC's graphics. Resolution, refresh rate and DLSS are machine-specific. Leave out
+  `-Only` to copy graphics too.
+- `diff` shows exactly what would change; `import` prints the same list, and backs up the current folder
+  to `~\bf6-settings\before-import-*` first.
+- Settings live in `Documents\Battlefield 6\settings\steam\PROFSAVEbf6mp_profile`, a plain-text
+  `GstRender.VSyncMode 0` list the game reads and re-saves, so hand edits made with the game closed stick.
+  `GstRender.ShaderBundleVersion_*` lines are per-GPU shader-cache stamps and are never copied.
+- **Steam Cloud syncs this folder between PCs on the same account.** Settings tuned on a laptop GPU can land
+  on a desktop-class machine (and the other way round). Export on each PC before switching, and if Steam
+  reports a Cloud conflict after an import, pick the **local** files.
+- EA app install instead of Steam: add `-Platform ea` (whatever folder name sits under `settings\`).
 
 ### Reading the Battlefield 6 performance overlay
 
