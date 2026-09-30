@@ -26,6 +26,7 @@ These scripts use Microsoft's own documented policies and settings to keep the a
 2. Double-click **`1-keep-local-account.cmd`** and accept the UAC prompt.
 3. Double-click **`2-linuxify.cmd`** and answer Y/n for each section.
 4. Restart.
+5. Optional: [Gaming](#gaming) (`3-game-tune.cmd`) and [Claude Code](#claude-code-on-native-windows).
 
 If SmartScreen says "Windows protected your PC", click **More info → Run anyway**, or right-click
 the file → Properties → **Unblock** first.
@@ -150,6 +151,32 @@ OneDrive and Widgets, then restores them when the game quits. Close your browser
 Your real FPS ≈ the lowest of CPU and GPU. If both sit at ~60 with low ms, something is capping you:
 check VSync and the refresh-rate setting (both were stuck at *On* / *60 Hz* here). "Memory exceeded" in the
 graphics menu means VRAM is full: use DLSS Performance before lowering textures.
+
+## Claude Code on native Windows
+
+Two steps, no WSL, no admin:
+
+1. In PowerShell:
+
+   ```powershell
+   irm https://claude.ai/install.ps1 | iex
+   ```
+
+   From CMD instead: `curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd`
+
+2. Open a **new** terminal (so PATH is picked up), `cd` into your project, and run `claude`. A browser
+   window opens to log in (needs a Pro, Max, Team, Enterprise or Console account; the free plan doesn't
+   include Claude Code).
+
+Check with `claude --version`; `claude doctor` diagnoses install problems. The native install updates itself.
+
+- **Git for Windows** (installed by section 10, or `winget install Git.Git`) is optional. Without it,
+  Claude Code runs commands in PowerShell; with it, it also gets a Bash tool via Git Bash.
+- `winget install Anthropic.ClaudeCode` works too, but doesn't auto-update (`winget upgrade Anthropic.ClaudeCode`).
+- If `claude` is "not recognized", the new terminal hasn't picked up PATH yet: open another one, or see
+  [Troubleshoot installation](https://code.claude.com/docs/en/troubleshoot-install).
+
+Source: [Claude Code setup docs](https://code.claude.com/docs/en/setup).
 
 ## Manual commands (no script)
 
